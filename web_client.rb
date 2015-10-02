@@ -1,6 +1,6 @@
 require 'net/http'
-host = "www.reddit.com"
-path = "/index.html"
+host = "localhost"
+path = "/index.htm"
 
 http = Net::HTTP.new(host)
 headers, body = http.get(path)

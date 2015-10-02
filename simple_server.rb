@@ -1,27 +1,11 @@
 require 'socket'                # Get sockets from stdlib
 
-server = TCPServer.open(2000)   # Socket to listen on port 2000
-loop {                          # Servers run forever
-  Thread.start(server.accept) do |client|
-    client.puts(Time.now.ctime) # Send the time to the client
-    request= client.gets
-    get_index? = true if request_type(request) == "GETS" && path_of_request(request) == "/index.html"
-    if get_index?
-    	file = File.open("./index.html")
-    	header = 1
-    	client.puts file.read
-    end
-	# client.puts "Closing the connection. Bye!"
-    client.close                # Disconnect from the client
-  end
-}
-
-
 def request_type(request) #request should be client.gets
   fields = request.split(' ')
-  return nil if fields.length != 3
-  return "GETS" if fields.first.match(/[Gg][Ee][Tt][Ss]/)
-  return "POST" if fields.first.match(/[Pp][Oo][Ss][Tt]/)
+  # return nil if fields.length != 3
+  # puts fields.first + " is field.first"
+  return "GET" if request =~ /GET .*/
+  return "POST" if request =~ /POST .*/
   return nil
 end
 
@@ -30,3 +14,39 @@ def path_of_request(request)
   return nil if fields.length != 3
   return fields[1]
 end
+
+def valid_request?(request)
+  return true if (request =~ /GET .* HTTP.*/) || (request =~ /POST .* HTTP.*/)
+end
+
+
+server = TCPServer.open(2000)   # Socket to listen on port 2000
+loop {                          # Servers run forever
+    client = server.accept
+    # client.puts(Time.now.ctime) # Send the time to the client
+    request= client.gets.chomp
+    client.puts(request)
+    # client.puts(request_type(request) == "GETS")
+    get_index = true if valid_request?(request) && request_type(request) == "GET" && path_of_request(request) == "/index.htm"
+    if get_index
+    	begin
+    	  file = File.open(File.expand_path("./index.html"))
+    	  response_line = "HTTP/1.0 200 OK"
+    	  response_body = file.read
+    	  file.close
+    	ensure
+    	  response_line ||= "HTTP/1.0 404 Not Found"
+    	end
+    	
+    else
+    	response_line = "HTTP/1.0 404 Not Found"
+    end
+
+    client.puts(response_line + "\n" + Time.now.ctime.to_s + "\r\n\r\n" + (response_body ? response_body.to_s : "") )
+
+	client.puts "Closing the connection. Bye!"
+    client.close                # Disconnect from the client
+
+}
+
+
