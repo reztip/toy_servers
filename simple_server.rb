@@ -25,7 +25,7 @@ loop {                          # Servers run forever
     client = server.accept
     # client.puts(Time.now.ctime) # Send the time to the client
     request= client.gets.chomp
-    client.puts(request)
+    # client.puts(request)
     # client.puts(request_type(request) == "GETS")
     get_index = true if valid_request?(request) && request_type(request) == "GET" && path_of_request(request) == "/index.htm"
     if get_index
@@ -44,7 +44,7 @@ loop {                          # Servers run forever
 
     client.puts(response_line + "\n" + Time.now.ctime.to_s + "\r\n\r\n" + (response_body ? response_body.to_s : "") )
 
-	client.puts "Closing the connection. Bye!"
+	# client.puts "Closing the connection. Bye!"
     client.close                # Disconnect from the client
 
 }
