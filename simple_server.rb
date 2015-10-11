@@ -1,4 +1,5 @@
 require 'socket'                # Get sockets from stdlib
+require 'json'
 
 def request_type(request) #request should be client.gets
   fields = request.split(' ')
@@ -10,8 +11,8 @@ def request_type(request) #request should be client.gets
 end
 
 def path_of_request(request)
-  fields = request.split(' ')
-  return nil if fields.length != 3
+  fields = request.split(/\s+/)
+  # return nil if fields.length != 3
   return fields[1]
 end
 
@@ -19,15 +20,38 @@ def valid_request?(request)
   return true if (request =~ /GET .* HTTP.*/) || (request =~ /POST .* HTTP.*/)
 end
 
+def client_representation #only for post requests
+	fields = request.split(/\s+/)
+	fields[3..-1].join
+  
+end
 
+def content_type(request_path)
+  ext = File.extname(request_path)
+  case ext
+    when ".html", ".htm"
+    	return "text/html"
+    when ".txt", ".rb", ".py", ".java"
+    	return "text/plain"
+    when ".css"
+    	return "text/css"
+    when ".jpeg", ".jpg"
+    	return "image/jpeg"
+    when ".gif"
+    	return "image/gif"
+    when ".xml"
+    	return "text/html"
+    else
+    	return "text/plain"
+    end
+end
+	
 server = TCPServer.open(2000)   # Socket to listen on port 2000
 loop {                          # Servers run forever
     client = server.accept
-    # client.puts(Time.now.ctime) # Send the time to the client
     request= client.gets.chomp
-    # client.puts(request)
-    # client.puts(request_type(request) == "GETS")
-    get_index = true if valid_request?(request) && request_type(request) == "GET" && path_of_request(request) == "/index.htm"
+    path = path_of_request(request)
+    get_index = true if valid_request?(request) && request_type(request) == "GET" && path == "/index.htm"
     if get_index
     	begin
     	  file = File.open(File.expand_path("./index.html"))
@@ -42,9 +66,14 @@ loop {                          # Servers run forever
     	response_line = "HTTP/1.0 404 Not Found"
     end
 
-    client.puts(response_line + "\n" + Time.now.ctime.to_s + "\r\n\r\n" + (response_body ? response_body.to_s : "") )
+    client.puts(response_line)
+    client.puts(Time.now.ctime.to_s)
+    client.puts("From: ")
+    client.puts("User-Agent: HTTPTool/1.0")
+    client.puts("Content-Type: #{ content_type(path) }"
+    client.puts("Content-Length: #{ response_body ? response_body.to_s.length : 0 }")
 
-	# client.puts "Closing the connection. Bye!"
+    client.puts(response_body ? response_body.to_s : "")
     client.close                # Disconnect from the client
 
 }
