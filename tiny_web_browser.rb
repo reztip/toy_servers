@@ -2,9 +2,7 @@ require 'json'
 require 'socket'
 host = "localhost"
 port = 2000
-puts "What file are you looking for (relative to the current working directory)?"
-path = gets.chomp
-path = "/index.htm" unless path =~ /.+\..+/ #valid file extension (not fully checked)
+
 puts "Do you want to perform a GET or POST request?"
 client_input = gets.chomp
 request_type = "GET" if client_input =~ /[Gg].*/
@@ -23,15 +21,20 @@ end
 # request = "#{request_type} #{path} HTTP/1.0\r\n\r\n#{client_representation ? " " + client_representation : ""}"
 case request_type
 	when "GET"
+      puts "What file are you looking for (relative to the current working directory)?"
+      path = gets.chomp
+      path = "/index.htm" unless path =~ /.+\..+/ #valid file extension (not currently valid)
       request = "#{request_type} #{path} HTTP/1.0\r\n\r\n"
   	when "POST"
-  	  request = "#{request_type} #{path} HTTP/1.0\r\n\r\n" + "Content-Length: #{content_length}\n" + "#{client_representation}"
+  	  request = "#{request_type} thanks.html HTTP/1.0\r\n" + "Content-Length: #{content_length}\n\n" + "#{client_representation}"
 	else #nothing
 end
 
 if request_type
 	socket = TCPSocket.open(host, port)
-	socket.print(request)
+	socket.write(request)
+  socket.write('xxx')
+  puts request
 	# socket.recv_nonblock(1000)
 	puts socket.read
 end

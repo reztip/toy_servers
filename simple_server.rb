@@ -2,12 +2,9 @@ require 'socket'                # Get sockets from stdlib
 require 'json'
 
 def request_type(request) #request should be client.gets
-  fields = request.split(' ')
-  # return nil if fields.length != 3
-  # puts fields.first + " is field.first"
   return "GET" if request =~ /GET .*/
   return "POST" if request =~ /POST .*/
-  return nil
+  nil
 end
 
 def path_of_request(request)
@@ -17,7 +14,8 @@ def path_of_request(request)
 end
 
 def valid_request?(request)
-  return true if (request =~ /GET .* HTTP.*/) || (request =~ /POST .* HTTP.*/)
+  true if (request =~ /GET .* HTTP.*/) || (request =~ /POST .* HTTP.*/)
+  false
 end
 
 def client_representation #only for post requests
@@ -50,30 +48,40 @@ server = TCPServer.open(2000)   # Socket to listen on port 2000
 loop {                          # Servers run forever
     client = server.accept
     request= client.gets.chomp
-    path = path_of_request(request)
-    get_index = true if valid_request?(request) && request_type(request) == "GET" && path == "/index.htm"
-    if get_index
-    	begin
-    	  file = File.open(File.expand_path("./index.html"))
-    	  response_line = "HTTP/1.0 200 OK"
-    	  response_body = file.read
-    	  file.close
-    	ensure
-    	  response_line ||= "HTTP/1.0 404 Not Found"
-    	end
-    	
-    else
-    	response_line = "HTTP/1.0 404 Not Found"
-    end
+    request_is_valid = valid_request?(request)
+	    if request_is_valid
+	    path = "./" + path_of_request(request)
+	    get_request = request_type(request) == "GET")
+	    if get_request 
+	    	if File.exist?(path)
+		    	begin
+		    	  file = File.open(File.expand_path(path))
+		    	  response_line = "HTTP/1.0 200 OK"
+		    	  response_body = file.read
+		    	  file.close
+		    	ensure
+		    	  response_line ||= "HTTP/1.0 404 Not Found"
+		    	end
+		    else #file not found
+	    	  response_line = "HTTP/1.0 404 Not Found"
+		    end
+	    	
+	    else
+	    	#write code for handling post requests
+	    
+	    end
 
-    client.puts(response_line)
-    client.puts(Time.now.ctime.to_s)
-    client.puts("From: ")
-    client.puts("User-Agent: HTTPTool/1.0")
-    client.puts("Content-Type: #{ content_type(path) }"
-    client.puts("Content-Length: #{ response_body ? response_body.to_s.length : 0 }")
+	    client.puts(response_line)
+	    client.puts(Time.now.ctime.to_s)
+	    client.puts("From: ")
+	    client.puts("User-Agent: HTTPTool/1.0")
+	    client.puts("Content-Type: #{ content_type(path) }"
+	    client.puts("Content-Length: #{ response_body ? response_body.to_s.length : 0 }")
 
-    client.puts(response_body ? response_body.to_s : "")
+	    client.puts(response_body ? response_body.to_s : "")
+	else
+		client.puts("Request invalid.")
+	end
     client.close                # Disconnect from the client
 
 }
